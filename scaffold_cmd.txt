@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold Name=ConnectionStrings:SqliteExampleDb Microsoft.EntityFrameworkCore.Sqlite --force --context "ExampleDbContext"--context-dir ./Data --context-namespace "ExampleApp.WebApi.Data" --output-dir ./Models --namespace "ExampleApp.WebApi.Models" 
