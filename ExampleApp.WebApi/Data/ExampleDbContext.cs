@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using ExampleApp.WebApi.Models;
+﻿using ExampleApp.WebApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ExampleApp.WebApi.Data;
