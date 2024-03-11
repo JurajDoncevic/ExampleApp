@@ -1,7 +1,6 @@
-﻿using ExampleApp.WebApi.Data;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using ExampleApp.WebApi.DTOs;
+using ExampleApp.DataAccess.Sqlite;
 
 namespace ExampleApp.WebApi.Controllers;
 
@@ -9,10 +8,11 @@ namespace ExampleApp.WebApi.Controllers;
 [ApiController]
 public class RolesController : ControllerBase
 {
-    private readonly ExampleDbContext _context;
-    public RolesController(ExampleDbContext context)
+    private readonly RoleRepository _roleRepository;
+
+    public RolesController(RoleRepository roleRepository)
     {
-        _context = context;
+        _roleRepository = roleRepository;
     }
 
     // GET: api/Roles?id=1&id=2&id=3
@@ -25,12 +25,10 @@ public class RolesController : ControllerBase
         // map role to DTO
         try
         {
-            var roles = _context.Roles.Where(r => ids.Contains(r.Id)).ToList();
-            if (roles.Count == 0)
-            {
-                return Ok(new List<Role>());
-            }
-            return Ok(roles.Select(r => r.ToDto()).ToList());
+            var roles = _roleRepository
+                .GetAll()
+                .Where(r => ids.Contains(r.Id));
+            return Ok(roles.Select(r => r.ToDto()));
         }
         catch (Exception ex)
         {
@@ -47,7 +45,7 @@ public class RolesController : ControllerBase
         // 200 with role if role
         try
         {
-            var role = _context.Roles.Find(id);
+            var role = _roleRepository.Get(id);
             if (role == null)
             {
                 return NotFound();
@@ -71,8 +69,10 @@ public class RolesController : ControllerBase
             {
                 return BadRequest();
             }
-            _context.Entry(role.ToDbModel()).State = EntityState.Modified;
-            _context.SaveChanges();
+            if (_roleRepository.Update(id, role.ToDbModel()) == null)
+            {
+                return NotFound();
+            }
             return NoContent();
         }
         catch (Exception ex)
@@ -88,10 +88,12 @@ public class RolesController : ControllerBase
     {
         try
         {
-            _context.Roles.Add(role.ToDbModel());
-            _context.SaveChanges();
-            // role is now populated with the new id
-            return CreatedAtAction("GetRole", new { id = role.Id }, role);
+            var createdRole = _roleRepository.Insert(role.ToDbModel());
+            if (createdRole == null)
+            {
+                return Problem(statusCode: 500, detail: "Failed to create role");
+            }
+            return CreatedAtAction(nameof(GetRole), new { id = createdRole.Id }, createdRole.ToDto());
         }
         catch (Exception ex)
         {
@@ -105,13 +107,10 @@ public class RolesController : ControllerBase
     {
         try
         {
-            var role = _context.Roles.Find(id);
-            if (role == null)
+            if (!_roleRepository.Delete(id))
             {
                 return NotFound();
             }
-            _context.Roles.Remove(role);
-            _context.SaveChanges();
             return NoContent();
         }
         catch (Exception ex)

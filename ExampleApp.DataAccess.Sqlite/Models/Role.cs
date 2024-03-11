@@ -1,4 +1,7 @@
-﻿namespace ExampleApp.WebApi.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ExampleApp.DataAccess.Sqlite.Models;
 
 public partial class Role
 {

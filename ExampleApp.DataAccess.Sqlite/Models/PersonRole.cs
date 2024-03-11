@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ExampleApp.WebApi.Models;
+namespace ExampleApp.DataAccess.Sqlite.Models;
 
 public partial class PersonRole
 {

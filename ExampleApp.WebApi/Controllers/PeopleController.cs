@@ -1,7 +1,6 @@
-﻿using ExampleApp.WebApi.Data;
+﻿using ExampleApp.DataAccess.Sqlite;
 using ExampleApp.WebApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ExampleApp.WebApi.Controllers;
 
@@ -9,22 +8,22 @@ namespace ExampleApp.WebApi.Controllers;
 [Route("api/[controller]")]
 public class PeopleController : ControllerBase
 {
-    private readonly ExampleDbContext _context;
+    private readonly PersonRepository _personRepository;
 
-    public PeopleController(ExampleDbContext context)
+    public PeopleController(PersonRepository personRepository)
     {
-        _context = context;
+        _personRepository = personRepository;
     }
 
     // GET: api/People
+
     [HttpGet]
     public ActionResult<IEnumerable<Person>> GetAllPeople()
     {
         try
         {
-            var people = _context.People.Select(p => p.ToDto()).ToList();
-            
-            return Ok(people);
+            var people = _personRepository.GetAll();
+            return Ok(people.Select(p => p.ToDto()));
         }
         catch (Exception ex)
         {
@@ -38,12 +37,12 @@ public class PeopleController : ControllerBase
     {
         try
         {
-            var person = _context.People.Find(id)?.ToDto();
+            var person = _personRepository.Get(id);
             if (person == null)
             {
                 return NotFound();
             }
-            return Ok(person);
+            return Ok(person.ToDto());
         }
         catch (Exception ex)
         {
@@ -57,18 +56,12 @@ public class PeopleController : ControllerBase
     {
         try
         {
-            // this is an aggregate, so it has have roles that are assigned to the person
-            var person = _context.People
-                .Include(p => p.PersonRoles)
-                .ThenInclude(pr => pr.Role)
-                .FirstOrDefault(p => p.Id == id)
-                ?.ToAggregateDto();
-
+            var person = _personRepository.GetAggregate(id);
             if (person == null)
             {
                 return NotFound();
             }
-            return Ok(person);
+            return Ok(person.ToAggregateDto());
         }
         catch (Exception ex)
         {
@@ -82,30 +75,11 @@ public class PeopleController : ControllerBase
         // no change here since we didn't use a DTO to transfer the data
         try
         {
-            var person = _context.People.Find(personId);
-            if (person == null)
+            if (_personRepository.AssignPersonToRole(personId, roleId, expiresOn))
             {
-                return NotFound();
+                return Ok();
             }
-
-            var role = _context.Roles.Find(roleId);
-            if (role == null)
-            {
-                return NotFound();
-            }
-
-            var personRole = new Models.PersonRole
-            {
-                Person = person,
-                Role = role,
-                GivenOn = DateTime.Now,
-                ExpiresOn = expiresOn
-            };
-
-            _context.PersonRoles.Add(personRole);
-            _context.SaveChanges();
-
-            return Ok(personRole);
+            return NotFound();
         }
         catch (Exception ex)
         {
@@ -119,17 +93,11 @@ public class PeopleController : ControllerBase
         // no change here since we didn't use a DTO to transfer the data
         try
         {
-            var personRole = _context.PersonRoles
-                .FirstOrDefault(pr => pr.PersonId == personId && pr.RoleId == roleId);
-            if (personRole == null)
+            if (_personRepository.DismissPersonFromRole(personId, roleId))
             {
-                return NotFound();
+                return Ok();
             }
-
-            _context.PersonRoles.Remove(personRole);
-            _context.SaveChanges();
-
-            return Ok(personRole);
+            return NotFound();
         }
         catch (Exception ex)
         {
@@ -149,8 +117,10 @@ public class PeopleController : ControllerBase
             {
                 return BadRequest();
             }
-            _context.Entry(person.ToDbModel()).State = EntityState.Modified;
-            _context.SaveChanges();
+            if (_personRepository.Update(id, person.ToDbModel()) == null)
+            {
+                return NotFound();
+            }
             return NoContent();
         }
         catch (Exception ex)
@@ -166,10 +136,8 @@ public class PeopleController : ControllerBase
     {
         try
         {
-            _context.People.Add(person.ToDbModel());
-            _context.SaveChanges();
-            // person is now populated with the new id
-            return CreatedAtAction("GetPerson", new { id = person.Id }, person);
+            var createdPerson = _personRepository.Insert(person.ToDbModel());
+            return CreatedAtAction(nameof(GetPerson), new { id = createdPerson.Id }, createdPerson.ToDto());
         }
         catch (Exception ex)
         {
@@ -184,14 +152,11 @@ public class PeopleController : ControllerBase
         // no change here since we didn't use a DTO to transfer the data
         try
         {
-            var person = _context.People.Find(id);
-            if (person == null)
+            if (_personRepository.Delete(id))
             {
-                return NotFound();
+                return Ok();
             }
-            _context.People.Remove(person);
-            _context.SaveChanges();
-            return NoContent();
+            return NotFound();
         }
         catch (Exception ex)
         {

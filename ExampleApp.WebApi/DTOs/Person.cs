@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using DbModels = ExampleApp.WebApi.Models;
+using DbModels = ExampleApp.DataAccess.Sqlite.Models;
 
 namespace ExampleApp.WebApi.DTOs;
 

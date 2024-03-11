@@ -1,7 +1,7 @@
-﻿using ExampleApp.WebApi.Models;
+﻿using ExampleApp.DataAccess.Sqlite.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace ExampleApp.WebApi.Data;
+namespace ExampleApp.DataAccess.Sqlite.Data;
 
 public partial class ExampleDbContext : DbContext
 {
@@ -21,7 +21,7 @@ public partial class ExampleDbContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlite("Name=ConnectionStrings:SqliteExampleDb");
+        => optionsBuilder.UseSqlite("Data Source=../ExampleDB.db");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
