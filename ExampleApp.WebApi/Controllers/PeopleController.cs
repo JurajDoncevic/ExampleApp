@@ -62,7 +62,7 @@ public class PeopleController : ControllerBase
                 .Include(p => p.PersonRoles)
                 .ThenInclude(pr => pr.Role)
                 .FirstOrDefault(p => p.Id == id)
-                ?.ToDto();
+                ?.ToAggregateDto();
 
             if (person == null)
             {
