@@ -53,7 +53,7 @@ public class PeopleController : ControllerBase
 
 
     [HttpGet("Aggregate/{id}")]
-    public ActionResult<Person> GetPersonAggregate(int id)
+    public ActionResult<PersonAggregate> GetPersonAggregate(int id)
     {
         try
         {
