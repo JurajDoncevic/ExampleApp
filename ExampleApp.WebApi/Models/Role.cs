@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ExampleApp.WebApi.Models;
+﻿namespace ExampleApp.WebApi.Models;
 
 public partial class Role
 {

@@ -1,5 +1,5 @@
 ﻿using ExampleApp.WebApi.Data;
-using ExampleApp.WebApi.Models;
+using ExampleApp.WebApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,11 +22,8 @@ public class PeopleController : ControllerBase
     {
         try
         {
-            var people = _context.People;
-            if (people.Count() == 0)
-            {
-                return Ok(new Person[0]);
-            }
+            var people = _context.People.Select(p => p.ToDto()).ToList();
+            
             return Ok(people);
         }
         catch (Exception ex)
@@ -41,7 +38,7 @@ public class PeopleController : ControllerBase
     {
         try
         {
-            var person = _context.People.Find(id);
+            var person = _context.People.Find(id)?.ToDto();
             if (person == null)
             {
                 return NotFound();
@@ -64,7 +61,8 @@ public class PeopleController : ControllerBase
             var person = _context.People
                 .Include(p => p.PersonRoles)
                 .ThenInclude(pr => pr.Role)
-                .FirstOrDefault(p => p.Id == id);
+                .FirstOrDefault(p => p.Id == id)
+                ?.ToDto();
 
             if (person == null)
             {
@@ -81,6 +79,7 @@ public class PeopleController : ControllerBase
     [HttpPost("{personId}/AssignToRole/{roleId}")]
     public IActionResult AssignPersonToRole(int personId, int roleId, DateTime? expiresOn)
     {
+        // no change here since we didn't use a DTO to transfer the data
         try
         {
             var person = _context.People.Find(personId);
@@ -95,7 +94,7 @@ public class PeopleController : ControllerBase
                 return NotFound();
             }
 
-            var personRole = new PersonRole
+            var personRole = new Models.PersonRole
             {
                 Person = person,
                 Role = role,
@@ -117,6 +116,7 @@ public class PeopleController : ControllerBase
     [HttpPost("{personId}/DismissFromRole/{roleId}")]
     public IActionResult DismissPersonFromRole(int personId, int roleId)
     {
+        // no change here since we didn't use a DTO to transfer the data
         try
         {
             var personRole = _context.PersonRoles
@@ -149,7 +149,7 @@ public class PeopleController : ControllerBase
             {
                 return BadRequest();
             }
-            _context.Entry(person).State = EntityState.Modified;
+            _context.Entry(person.ToDbModel()).State = EntityState.Modified;
             _context.SaveChanges();
             return NoContent();
         }
@@ -166,7 +166,7 @@ public class PeopleController : ControllerBase
     {
         try
         {
-            _context.People.Add(person);
+            _context.People.Add(person.ToDbModel());
             _context.SaveChanges();
             // person is now populated with the new id
             return CreatedAtAction("GetPerson", new { id = person.Id }, person);
@@ -181,6 +181,7 @@ public class PeopleController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult DeletePerson(int id)
     {
+        // no change here since we didn't use a DTO to transfer the data
         try
         {
             var person = _context.People.Find(id);

@@ -1,7 +1,7 @@
 ﻿using ExampleApp.WebApi.Data;
-using ExampleApp.WebApi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ExampleApp.WebApi.DTOs;
 
 namespace ExampleApp.WebApi.Controllers;
 
@@ -22,26 +22,15 @@ public class RolesController : ControllerBase
         // 500 on error
         // 200 with empty array if no roles
         // 200 with array of roles if roles
+        // map role to DTO
         try
         {
-            if (ids.Length == 0)
+            var roles = _context.Roles.Where(r => ids.Contains(r.Id)).ToList();
+            if (roles.Count == 0)
             {
-                var roles = _context.Roles;
-                if (roles.Count() == 0)
-                {
-                    return Ok(new Role[0]);
-                }
-                return Ok(roles);
+                return Ok(new List<Role>());
             }
-            else
-            {
-                var roles = _context.Roles.Where(r => ids.Contains(r.Id));
-                if (roles.Count() == 0)
-                {
-                    return NotFound();
-                }
-                return Ok(roles);
-            }
+            return Ok(roles.Select(r => r.ToDto()).ToList());
         }
         catch (Exception ex)
         {
@@ -63,7 +52,7 @@ public class RolesController : ControllerBase
             {
                 return NotFound();
             }
-            return Ok(role);
+            return Ok(role.ToDto());
         }
         catch (Exception ex)
         {
@@ -82,7 +71,7 @@ public class RolesController : ControllerBase
             {
                 return BadRequest();
             }
-            _context.Entry(role).State = EntityState.Modified;
+            _context.Entry(role.ToDbModel()).State = EntityState.Modified;
             _context.SaveChanges();
             return NoContent();
         }
@@ -99,7 +88,7 @@ public class RolesController : ControllerBase
     {
         try
         {
-            _context.Roles.Add(role);
+            _context.Roles.Add(role.ToDbModel());
             _context.SaveChanges();
             // role is now populated with the new id
             return CreatedAtAction("GetRole", new { id = role.Id }, role);
