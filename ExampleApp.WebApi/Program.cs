@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ExampleApp.WebApi.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,10 @@ IConfiguration configuration = builder.Environment.IsDevelopment()
 
 // Add services to the container.
 builder.Services.AddControllers()
-                .AddJsonOptions(x => x.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve); // this is so EF doesn't throw a stack overflow exception when serializing circular references; this obviously has to go!
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; // ignore cycles in JSON
+    });
 
 builder.Services.AddDbContext<ExampleDbContext>(options =>
 {
