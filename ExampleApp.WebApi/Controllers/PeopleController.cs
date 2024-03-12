@@ -1,4 +1,4 @@
-﻿using ExampleApp.DataAccess.Sqlite;
+﻿using ExampleApp.Repositories;
 using ExampleApp.WebApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,9 +8,9 @@ namespace ExampleApp.WebApi.Controllers;
 [Route("api/[controller]")]
 public class PeopleController : ControllerBase
 {
-    private readonly PersonRepository _personRepository;
+    private readonly IPersonRepository _personRepository;
 
-    public PeopleController(PersonRepository personRepository)
+    public PeopleController(IPersonRepository personRepository)
     {
         _personRepository = personRepository;
     }
@@ -20,59 +20,55 @@ public class PeopleController : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<Person>> GetAllPeople()
     {
-        try
+        var people = _personRepository.GetAll();
+
+        if (people.IsFailure)
         {
-            var people = _personRepository.GetAll();
-            return Ok(people.Select(p => p.ToDto()));
+            return Problem(statusCode: 500, detail: people.Message);
         }
-        catch (Exception ex)
+        if (people.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: people.Message);
         }
+
+        return Ok(people.Data.Select(DtoMapping.ToDto));
     }
 
     // GET: api/People/5
     [HttpGet("{id}")]
     public ActionResult<Person> GetPerson(int id)
     {
-        try
+        var person = _personRepository.Get(id);
+        if (person.IsFailure)
         {
-            var person = _personRepository.Get(id);
-            if (person == null)
-            {
-                return NotFound();
-            }
-            return Ok(person.ToDto());
+            return NotFound();
         }
-        catch (Exception ex)
+        if (person.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: person.Message);
         }
+        return Ok(person.Data.ToDto());
     }
 
 
     [HttpGet("Aggregate/{id}")]
     public ActionResult<PersonAggregate> GetPersonAggregate(int id)
     {
-        try
+        var person = _personRepository.GetAggregate(id);
+        if (person.IsFailure)
         {
-            var person = _personRepository.GetAggregate(id);
-            if (person == null)
-            {
-                return NotFound();
-            }
-            return Ok(person.ToAggregateDto());
+            return NotFound();
         }
-        catch (Exception ex)
+        if (person.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: person.Message);
         }
+        return Ok(person.Data);
     }
 
     [HttpPost("{personId}/AssignToRole/{roleId}")]
     public IActionResult AssignPersonToRole(int personId, int roleId, DateTime? expiresOn)
     {
-        // no change here since we didn't use a DTO to transfer the data
         try
         {
             if (_personRepository.AssignPersonToRole(personId, roleId, expiresOn))
@@ -111,22 +107,22 @@ public class PeopleController : ControllerBase
     [HttpPut("{id}")]
     public IActionResult EditPerson(int id, Person person)
     {
-        try
+        if (id != person.Id)
         {
-            if (id != person.Id)
-            {
-                return BadRequest();
-            }
-            if (_personRepository.Update(id, person.ToDbModel()) == null)
-            {
-                return NotFound();
-            }
-            return NoContent();
+            return BadRequest();
         }
-        catch (Exception ex)
+
+        var updatedPerson = _personRepository.Update(person.ToDomain());
+        if (updatedPerson.IsFailure)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: updatedPerson.Message);
         }
+        if (updatedPerson.IsException)
+        {
+            return Problem(statusCode: 500, detail: updatedPerson.Message);
+        }
+
+        return NoContent();
     }
 
     // POST: api/People
@@ -134,34 +130,34 @@ public class PeopleController : ControllerBase
     [HttpPost]
     public ActionResult<Person> CreatePerson(Person person)
     {
-        try
+        var newPerson = _personRepository.Insert(person.ToDomain());
+        if (newPerson.IsFailure)
         {
-            var createdPerson = _personRepository.Insert(person.ToDbModel());
-            return CreatedAtAction(nameof(GetPerson), new { id = createdPerson.Id }, createdPerson.ToDto());
+            return Problem(statusCode: 500, detail: newPerson.Message);
         }
-        catch (Exception ex)
+        if (newPerson.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: newPerson.Message);
         }
+
+        return CreatedAtAction("GetPerson", null);
     }
 
     // DELETE: api/People/5
     [HttpDelete("{id}")]
     public IActionResult DeletePerson(int id)
     {
-        // no change here since we didn't use a DTO to transfer the data
-        try
+        var removed = _personRepository.Remove(id);
+        if (removed.IsFailure)
         {
-            if (_personRepository.Delete(id))
-            {
-                return Ok();
-            }
-            return NotFound();
+            return Problem(statusCode: 404, detail: removed.Message);
         }
-        catch (Exception ex)
+        if (removed.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: removed.Message);
         }
+
+        return Ok();
     }
 
 }

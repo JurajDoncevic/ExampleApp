@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using DbModels = ExampleApp.DataAccess.Sqlite.Models;
+using DomainModels = ExampleApp.Domain.Models;
 
 namespace ExampleApp.WebApi.DTOs;
 
@@ -22,7 +22,7 @@ public class Person
 
 public static partial class DtoMapping
 {
-    public static Person ToDto(this DbModels.Person person)
+    public static Person ToDto(this DomainModels.Person person)
         => new Person()
         {
             Id = person.Id,
@@ -31,12 +31,11 @@ public static partial class DtoMapping
             DateOfBirth = person.DateOfBirth
         };
 
-    public static DbModels.Person ToDbModel(this Person person)
-        => new DbModels.Person
-        {
-            Id = person.Id,
-            FirstName = person.FirstName,
-            LastName = person.LastName,
-            DateOfBirth = person.DateOfBirth
-        };
+    public static DomainModels.Person ToDomain(this Person person)
+        => new DomainModels.Person (
+            person.Id,
+            person.FirstName,
+            person.LastName,
+            person.DateOfBirth
+        );
 }

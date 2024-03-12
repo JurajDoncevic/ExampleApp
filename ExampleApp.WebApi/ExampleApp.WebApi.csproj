@@ -22,8 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ExampleApp.DataAccess.Sqlite\ExampleApp.DataAccess.Sqlite.csproj" />
     <ProjectReference Include="..\ExampleApp.Repositories\ExampleApp.Repositories.csproj" />
+    <ProjectReference Include="..\ExampleApp.Repositories.Sqlite\ExampleApp.Repositories.Sqlite.csproj" />
+    <ProjectReference Include="..\ExampleApp.Core\ExampleApp.Core.csproj" />
+    <ProjectReference Include="..\ExampleApp.Domain\ExampleApp.Domain.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ExampleApp.WebApi.DTOs;
-using ExampleApp.DataAccess.Sqlite;
+using ExampleApp.Repositories;
 
 namespace ExampleApp.WebApi.Controllers;
 
@@ -8,9 +8,9 @@ namespace ExampleApp.WebApi.Controllers;
 [ApiController]
 public class RolesController : ControllerBase
 {
-    private readonly RoleRepository _roleRepository;
+    private readonly IRoleRepository _roleRepository;
 
-    public RolesController(RoleRepository roleRepository)
+    public RolesController(IRoleRepository roleRepository)
     {
         _roleRepository = roleRepository;
     }
@@ -19,43 +19,38 @@ public class RolesController : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<Role>> GetRoles([FromQuery(Name = "id")] int[] ids)
     {
-        // 500 on error
-        // 200 with empty array if no roles
-        // 200 with array of roles if roles
-        // map role to DTO
-        try
+
+        var roles =
+            ids.Length == 0
+                ? _roleRepository.GetAll()
+                : _roleRepository.GetByIds(ids); 
+
+        if (roles.IsFailure)
         {
-            var roles = _roleRepository
-                .GetAll()
-                .Where(r => ids.Contains(r.Id));
-            return Ok(roles.Select(r => r.ToDto()));
+            return Problem(statusCode: 500, detail: roles.Message);
         }
-        catch (Exception ex)
+        if (roles.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: roles.Message);
         }
+
+        return Ok(roles.Data.Select(DtoMapping.ToDto));
     }
 
     // GET: api/Roles/5
     [HttpGet("{id}")]
     public ActionResult<Role> GetRole(int id)
     {
-        // 500 on error
-        // 404 if role not found
-        // 200 with role if role
-        try
+        var role = _roleRepository.Get(id);
+        if (role.IsFailure)
         {
-            var role = _roleRepository.Get(id);
-            if (role == null)
-            {
-                return NotFound();
-            }
-            return Ok(role.ToDto());
+            return NotFound();
         }
-        catch (Exception ex)
+        if (role.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: role.Message);
         }
+        return Ok(role.Data.ToDto());
     }
 
     // PUT: api/Roles/5
@@ -63,22 +58,22 @@ public class RolesController : ControllerBase
     [HttpPut("{id}")]
     public IActionResult EditRole(int id, Role role)
     {
-        try
+        if (id != role.Id)
         {
-            if (id != role.Id)
-            {
-                return BadRequest();
-            }
-            if (_roleRepository.Update(id, role.ToDbModel()) == null)
-            {
-                return NotFound();
-            }
-            return NoContent();
+            return BadRequest();
         }
-        catch (Exception ex)
+
+        var updatedRole = _roleRepository.Update(DtoMapping.ToDomain(role));
+        if (updatedRole.IsFailure)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 404, detail: updatedRole.Message);
         }
+        if (updatedRole.IsException)
+        {
+            return Problem(statusCode: 500, detail: updatedRole.Message);
+        }
+
+        return NoContent();
     }
 
     // POST: api/Roles
@@ -86,36 +81,33 @@ public class RolesController : ControllerBase
     [HttpPost]
     public ActionResult<Role> CreateRole(Role role)
     {
-        try
+        var newRole = _roleRepository.Insert(DtoMapping.ToDomain(role));
+        if (newRole.IsFailure)
         {
-            var createdRole = _roleRepository.Insert(role.ToDbModel());
-            if (createdRole == null)
-            {
-                return Problem(statusCode: 500, detail: "Failed to create role");
-            }
-            return CreatedAtAction(nameof(GetRole), new { id = createdRole.Id }, createdRole.ToDto());
+            return Problem(statusCode: 500, detail: newRole.Message);
         }
-        catch (Exception ex)
+        if (newRole.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: newRole.Message);
         }
+
+        return CreatedAtAction("GetRole", null);
     }
 
     // DELETE: api/Roles/5
     [HttpDelete("{id}")]
     public IActionResult DeleteRole(int id)
     {
-        try
+        var removed = _roleRepository.Remove(id);
+        if (removed.IsFailure)
         {
-            if (!_roleRepository.Delete(id))
-            {
-                return NotFound();
-            }
-            return NoContent();
+            return Problem(statusCode: 404, detail: removed.Message);
         }
-        catch (Exception ex)
+        if (removed.IsException)
         {
-            return Problem(statusCode: 500, detail: ex.Message);
+            return Problem(statusCode: 500, detail: removed.Message);
         }
+
+        return Ok();
     }
 }

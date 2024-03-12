@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using DbModels = ExampleApp.DataAccess.Sqlite.Models;
+using DomainModels = ExampleApp.Domain.Models;
 
 namespace ExampleApp.WebApi.DTOs;
 
@@ -15,19 +15,19 @@ public class RoleAssignment
 
 public static partial class DtoMapping
 {
-    public static RoleAssignment ToDto(this DbModels.PersonRole personRole)
+    public static RoleAssignment ToDto(this DomainModels.RoleAssignment roleAssignment)
         => new RoleAssignment()
         {
-            ExpiresOn = personRole.ExpiresOn,
-            GivenOn = personRole.GivenOn,
-            Role = personRole.Role.ToDto()
+            ExpiresOn = roleAssignment.ExpiresOn,
+            GivenOn = roleAssignment.GivenOn,
+            Role = roleAssignment.Role.ToDto()
         };
 
-    public static DbModels.PersonRole ToDbModel(this RoleAssignment roleAssignment, int personId)
-        => new DbModels.PersonRole {
-            PersonId = personId,
-            Role = roleAssignment.Role.ToDbModel(),
-            GivenOn = roleAssignment.GivenOn,
-            ExpiresOn = roleAssignment.ExpiresOn
-        };
+    public static DomainModels.RoleAssignment ToDbModel(this RoleAssignment roleAssignment, int personId)
+        => new DomainModels.RoleAssignment
+        (
+            roleAssignment.GivenOn,
+            roleAssignment.ExpiresOn,
+            roleAssignment.Role.ToDomain()
+        );
 }

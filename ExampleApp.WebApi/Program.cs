@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using ExampleApp.DataAccess.Sqlite;
 using ExampleApp.DataAccess.Sqlite.Data;
-using ExampleApp.DataAccess.Sqlite.Models;
+using ExampleApp.Repositories;
+using ExampleApp.Repositories.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,8 +26,8 @@ builder.Services.AddDbContext<ExampleDbContext>(options =>
 });
 
 // add the repositories to the DI container - no interface???
-builder.Services.AddTransient<RoleRepository>();
-builder.Services.AddTransient<PersonRepository>();
+builder.Services.AddTransient<IRoleRepository, RoleRepository>();
+builder.Services.AddTransient<IPersonRepository, PersonRepository>();
 
 
 

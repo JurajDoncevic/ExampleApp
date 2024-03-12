@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using DbModels = ExampleApp.DataAccess.Sqlite.Models;
+using DomainModels = ExampleApp.Domain.Models;
 
 namespace ExampleApp.WebApi.DTOs;
 
@@ -20,24 +20,24 @@ public class PersonAggregate
 
 public static partial class DtoMapping
 {
-    public static PersonAggregate ToAggregateDto(this DbModels.Person person)
+    public static PersonAggregate ToAggregateDto(this DomainModels.Person person)
         => new PersonAggregate()
         {
             Id = person.Id,
             FirstName = person.FirstName,
             LastName = person.LastName,
             DateOfBirth = person.DateOfBirth,
-            RoleAssignments = person.PersonRoles == null
+            RoleAssignments = person.RoleAssignments == null
                             ? new List<RoleAssignment>()
-                            : person.PersonRoles.Select(ra => ra.ToDto()).ToList()
+                            : person.RoleAssignments.Select(ra => ra.ToDto()).ToList()
         };
 
-    public static DbModels.Person ToDbModel(PersonAggregate person)
-        => new DbModels.Person {
-            Id = person.Id,
-            FirstName = person.FirstName,
-            LastName = person.LastName,
-            DateOfBirth = person.DateOfBirth,
-            PersonRoles = person.RoleAssignments.Select(ra => ra.ToDbModel(person.Id)).ToList()
-        };
+    public static DomainModels.Person ToDomain(PersonAggregate person)
+        => new DomainModels.Person (
+            person.Id,
+            person.FirstName,
+            person.LastName,
+            person.DateOfBirth,
+            person.RoleAssignments.Select(ra => ra.ToDbModel(person.Id))
+        );
 }

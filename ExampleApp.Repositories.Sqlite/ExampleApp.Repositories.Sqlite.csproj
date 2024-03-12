@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\ExampleApp.Domain\ExampleApp.Domain.csproj" />
-    <ProjectReference Include="..\ExampleApp.Core\ExampleApp.Core.csproj" />
+    <ProjectReference Include="..\ExampleApp.DataAccess.Sqlite\ExampleApp.DataAccess.Sqlite.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
