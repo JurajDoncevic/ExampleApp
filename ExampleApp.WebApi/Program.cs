@@ -11,6 +11,8 @@ IConfiguration configuration = builder.Environment.IsDevelopment()
     ? builder.Configuration.AddJsonFile("appsettings.Development.json").Build()
     : builder.Configuration.AddJsonFile("appsettings.json").Build();
 
+builder.Services.AddTransient<ExampleApp.Logging.ILogger, ExampleApp.Logging.Logger>(); // register the concrete logger
+
 // add controllers and configure JSON serialization
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

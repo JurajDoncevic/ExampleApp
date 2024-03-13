@@ -26,6 +26,7 @@
     <ProjectReference Include="..\ExampleApp.Repositories.Sqlite\ExampleApp.Repositories.Sqlite.csproj" />
     <ProjectReference Include="..\ExampleApp.Core\ExampleApp.Core.csproj" />
     <ProjectReference Include="..\ExampleApp.Domain\ExampleApp.Domain.csproj" />
+    <ProjectReference Include="..\ExampleApp.Logging\ExampleApp.Logging.csproj" />
   </ItemGroup>
 
 </Project>
